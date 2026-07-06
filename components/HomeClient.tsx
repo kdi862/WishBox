@@ -5,17 +5,18 @@ import type { WishItem } from "@/lib/db";
 import { tagCountMap, tagIdsForItem, useWishBoxData } from "@/lib/useWishBoxData";
 import { AddEditItemModal } from "./AddEditItemModal";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { DataNotice } from "./DataNotice";
 import { EmptyState } from "./EmptyState";
 import { Header } from "./Header";
+import { ItemDetailModal } from "./ItemDetailModal";
 import { ItemList } from "./ItemList";
 import { Snackbar } from "./Snackbar";
 import { SummaryBanner } from "./SummaryBanner";
 import { TabsAndSort, type SortOption, type TabKey } from "./TabsAndSort";
 import { TagFilterBar } from "./TagFilterBar";
 import { TagManageModal } from "./TagManageModal";
+import { WelcomeModal } from "./WelcomeModal";
 
-const NOTICE_STORAGE_KEY = "wishbox-notice-seen";
+const WELCOME_STORAGE_KEY = "wishbox-welcome-seen";
 const UNDO_TIMEOUT_MS = 3000;
 const FADE_OUT_MS = 300;
 
@@ -31,23 +32,24 @@ export function HomeClient() {
   const [editingItem, setEditingItem] = useState<WishItem | null>(null);
   const [isTagManageOpen, setIsTagManageOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState<WishItem | null>(null);
+  const [viewingItemId, setViewingItemId] = useState<string | null>(null);
 
   const [fadingItemId, setFadingItemId] = useState<string | null>(null);
   const [undoTarget, setUndoTarget] = useState<WishItem | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [showNotice, setShowNotice] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!window.localStorage.getItem(NOTICE_STORAGE_KEY)) {
-      setShowNotice(true);
+    if (!window.localStorage.getItem(WELCOME_STORAGE_KEY)) {
+      setShowWelcome(true);
     }
   }, []);
 
-  const dismissNotice = () => {
-    window.localStorage.setItem(NOTICE_STORAGE_KEY, "1");
-    setShowNotice(false);
+  const dismissWelcome = () => {
+    window.localStorage.setItem(WELCOME_STORAGE_KEY, "1");
+    setShowWelcome(false);
   };
 
   useEffect(() => {
@@ -98,6 +100,8 @@ export function HomeClient() {
     return "no-items" as const;
   }, [visibleItems, selectedTagIds, activeTab]);
 
+  const viewingItem = items.find((item) => item.id === viewingItemId) ?? null;
+
   const openAddModal = () => {
     setEditingItem(null);
     setIsAddModalOpen(true);
@@ -106,6 +110,12 @@ export function HomeClient() {
   const openEditModal = (item: WishItem) => {
     setEditingItem(item);
     setIsAddModalOpen(true);
+  };
+
+  const handleEditFromDetail = () => {
+    if (!viewingItem) return;
+    setViewingItemId(null);
+    openEditModal(viewingItem);
   };
 
   const handleToggle = async (item: WishItem) => {
@@ -138,8 +148,6 @@ export function HomeClient() {
   return (
     <div className="flex flex-1 flex-col pb-24">
       <Header onAddClick={openAddModal} />
-
-      {showNotice && <DataNotice onDismiss={dismissNotice} />}
 
       <TagFilterBar
         tags={tags}
@@ -174,7 +182,7 @@ export function HomeClient() {
           fadingItemId={fadingItemId}
           onToggle={handleToggle}
           onRequestDelete={setDeletingItem}
-          onEdit={openEditModal}
+          onView={(item) => setViewingItemId(item.id)}
         />
       )}
 
@@ -219,6 +227,15 @@ export function HomeClient() {
       {undoTarget && (
         <Snackbar message="산 것으로 이동했어요" actionLabel="되돌리기" onAction={handleUndo} />
       )}
+
+      <ItemDetailModal
+        item={viewingItem}
+        tags={viewingItem ? tagsByItemId(viewingItem.id) : []}
+        onClose={() => setViewingItemId(null)}
+        onEdit={handleEditFromDetail}
+      />
+
+      <WelcomeModal isOpen={showWelcome} onClose={dismissWelcome} />
     </div>
   );
 }

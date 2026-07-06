@@ -7,14 +7,14 @@ export function ItemList({
   fadingItemId,
   onToggle,
   onRequestDelete,
-  onEdit,
+  onView,
 }: {
   items: WishItem[];
   tagsByItemId: (itemId: string) => Tag[];
   fadingItemId: string | null;
   onToggle: (item: WishItem) => void;
   onRequestDelete: (item: WishItem) => void;
-  onEdit: (item: WishItem) => void;
+  onView: (item: WishItem) => void;
 }) {
   return (
     <ul className="flex flex-col gap-3 px-4 py-3 sm:px-6">
@@ -26,7 +26,7 @@ export function ItemList({
             isFading={fadingItemId === item.id}
             onToggle={() => onToggle(item)}
             onRequestDelete={() => onRequestDelete(item)}
-            onClick={() => onEdit(item)}
+            onClick={() => onView(item)}
           />
         </li>
       ))}
