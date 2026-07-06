@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📦 WishBox
 
-## Getting Started
+**여기저기 흩어진 "사고 싶은 것"들을 한 곳에 모아두는 상자**
 
-First, run the development server:
+쇼핑몰, SNS, 친구 추천 등 여기저기서 생기는 "이거 사고 싶다"는 마음을 한 군데에 모아두고, 지금 뭘 먼저 사면 좋을지 판단하기 쉽게 도와주는 개인용 위시리스트 웹앱입니다.
+
+---
+
+## 😩 이런 고민에서 시작했어요
+
+- 위시리스트가 여러 사이트에 흩어져 있어서, 정작 뭘 사려고 했는지 까먹는다.
+- 사고 싶은 게 여러 개일 때 뭘 먼저 살지 정하기 어렵다.
+- "당장 필요한 것"과 "그냥 갖고 싶은 것"이 뒤섞여 있어서, 하나의 기준(가격순, 최신순 등)만으로는 우선순위가 잘 안 맞는다.
+
+**WishBox**는 항목마다 "필요도"와 "욕구"를 따로 입력받아서, 이 두 가지를 함께 고려한 우선순위로 무엇을 먼저 사면 좋을지 한눈에 보여줍니다.
+
+---
+
+## ✨ 주요 기능
+
+### 1. 위시 항목 기록
+- 상품명, 구매 링크, 가격, 이미지(첨부 또는 링크), 비고를 입력해 항목을 추가/수정합니다.
+- 이미지가 없으면 태그 색상 기반의 기본 아이콘이 대신 표시됩니다.
+
+### 2. 태그로 분류하고 필터링
+- 항목마다 원하는 만큼 태그를 붙일 수 있고, 입력 중에 바로 새 태그를 만들 수 있습니다.
+- 상단 태그 필터 바에서 태그를 여러 개 선택해 원하는 항목만 모아볼 수 있습니다.
+- 별도의 "태그 관리" 화면에서 태그 이름·색상 수정, 삭제(연결된 항목에서도 함께 제거)를 할 수 있습니다.
+
+### 3. 필요도 × 욕구, 2축 우선순위 매트릭스
+항목을 추가할 때 "필요도"와 "욕구/만족도"를 각각 1~5점으로 선택하면, 아래 2×2 매트릭스 중 어디에 해당하는지 바로 보여줍니다.
+
+| | 욕구 낮음 | 욕구 높음 |
+|---|---|---|
+| **필요도 높음** | 꼭 필요해요 | 지금 사요 |
+| **필요도 낮음** | 다시 생각해봐요 | 천천히 사도 돼요 |
+
+- 필요도 힌트: *"이게 없으면 지금 생활에 불편함이 있나요?"*
+- 욕구 힌트: *"이걸 가지면 얼마나 기쁠 것 같나요?"*
+
+### 4. 살 것 / 산 것, 탭으로 구분
+- "살 것" 탭에서는 아직 안 산 항목만, "산 것" 탭에서는 체크 완료한 항목만 모아봅니다.
+- 항목을 체크하면 잠깐 반투명해졌다가 "산 것"으로 자동 이동하고, 3초간 "되돌리기" 스낵바가 떠서 실수로 체크해도 바로 되돌릴 수 있습니다.
+- 롱프레스 또는 좌우로 스와이프하면 삭제 버튼이 나타나고, 삭제 전에는 항상 한 번 더 확인합니다.
+
+### 5. 정렬 & 요약
+- 우선순위순 · 최근 추가순 · 가격 낮은순 · 가격 높은순으로 정렬할 수 있습니다.
+- "살 것" 탭 상단에는 아직 안 산 항목의 총개수와 합계 금액이 요약돼서 보입니다 (가격을 안 적은 항목은 개수에는 포함되지만 합계에서는 제외돼요).
+
+---
+
+## 💾 데이터는 어디에 저장되나요?
+
+WishBox는 **서버 없이 브라우저 안에서만 동작하는 로컬 전용 앱**입니다.
+
+- 입력한 모든 데이터는 브라우저의 **IndexedDB**에 저장됩니다. (`Dexie.js`로 관리)
+- 별도의 로그인이나 서버 동기화가 없어서, **이 브라우저·이 기기에서만** 데이터가 보입니다.
+- 브라우저 캐시/사이트 데이터를 지우거나 시크릿 모드로 접속하면 저장된 항목이 사라질 수 있으니 주의해주세요. (앱 첫 진입 시 이 안내가 한 번 노출됩니다.)
+- 다만 데이터 구조는 단순하게 설계해서, 나중에 클라우드 동기화가 필요해지면 Supabase 등으로 옮기기 쉽게 만들어뒀습니다.
+
+---
+
+## 🛠 기술 스택
+
+| 영역 | 기술 |
+|---|---|
+| 프레임워크 | Next.js 15 (App Router) |
+| 언어 | TypeScript |
+| 스타일 | Tailwind CSS 4 |
+| 로컬 데이터베이스 | IndexedDB (Dexie.js) |
+| 폰트 | Pretendard |
+
+---
+
+## 🚀 시작하기
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 을 열면 됩니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+다른 명령어:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build   # 프로덕션 빌드
+npm run start   # 빌드된 앱 실행
+npm run lint    # 코드 검사
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 폴더 구조
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+app/                        # Next.js App Router 페이지, 전역 스타일
+components/                 # 화면을 구성하는 UI 컴포넌트
+  ui/                        # 버튼, 칩, 모달 등 공용 컴포넌트
+lib/
+  db.ts                      # IndexedDB 스키마 및 CRUD 함수 (items / tags / item_tags)
+  useWishBoxData.ts          # 데이터 로드·갱신을 담당하는 훅
+  priority.ts                # 필요도 × 욕구 매트릭스 계산 로직
+  format.ts                  # 가격 포맷, URL 검증 등 유틸
+docs/                        # 기획/디자인 문서
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 📄 라이선스
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+개인 프로젝트로 제작되었습니다.
