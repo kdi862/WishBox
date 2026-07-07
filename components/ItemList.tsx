@@ -4,14 +4,12 @@ import { ItemCard } from "./ItemCard";
 export function ItemList({
   items,
   tagsByItemId,
-  fadingItemId,
   onToggle,
   onRequestDelete,
   onView,
 }: {
   items: WishItem[];
   tagsByItemId: (itemId: string) => Tag[];
-  fadingItemId: string | null;
   onToggle: (item: WishItem) => void;
   onRequestDelete: (item: WishItem) => void;
   onView: (item: WishItem) => void;
@@ -23,7 +21,6 @@ export function ItemList({
           <ItemCard
             item={item}
             tags={tagsByItemId(item.id)}
-            isFading={fadingItemId === item.id}
             onToggle={() => onToggle(item)}
             onRequestDelete={() => onRequestDelete(item)}
             onClick={() => onView(item)}

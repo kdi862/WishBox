@@ -15,14 +15,12 @@ const DRAG_THRESHOLD = 8;
 export function ItemCard({
   item,
   tags,
-  isFading,
   onToggle,
   onRequestDelete,
   onClick,
 }: {
   item: WishItem;
   tags: Tag[];
-  isFading: boolean;
   onToggle: () => void;
   onRequestDelete: () => void;
   onClick: () => void;
@@ -97,9 +95,7 @@ export function ItemCard({
         onPointerCancel={handlePointerUp}
         onClick={handleCardClick}
         style={{ transform: `translateX(${translateX}px)` }}
-        className={`relative flex items-center gap-3 rounded-xl bg-card p-4 shadow-sm transition-[transform,opacity] duration-300 select-none touch-pan-y ${
-          isFading ? "opacity-30" : "opacity-100"
-        }`}
+        className="relative flex items-center gap-3 rounded-xl bg-card p-4 shadow-sm transition-transform duration-300 select-none touch-pan-y"
       >
         <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black/5">
           {item.image_url ? (

@@ -13,11 +13,13 @@ export function ItemDetailModal({
   tags,
   onClose,
   onEdit,
+  onDelete,
 }: {
   item: WishItem | null;
   tags: Tag[];
   onClose: () => void;
   onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <Modal isOpen={item !== null} onClose={onClose} widthClassName="max-w-md">
@@ -86,13 +88,18 @@ export function ItemDetailModal({
             <p className="mt-4 text-center text-[13px] text-gray">등록된 구매 링크가 없어요</p>
           )}
 
-          <div className="mt-6 flex justify-end gap-2">
-            <Button variant="secondary" onClick={onClose}>
-              닫기
-            </Button>
-            <Button variant="primary" onClick={onEdit}>
-              수정
-            </Button>
+          <div className="mt-6 flex items-center justify-between gap-2">
+            <button type="button" onClick={onDelete} className="px-1.5 text-[14px] font-medium text-coral">
+              삭제
+            </button>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={onClose}>
+                닫기
+              </Button>
+              <Button variant="primary" onClick={onEdit}>
+                수정
+              </Button>
+            </div>
           </div>
         </>
       )}

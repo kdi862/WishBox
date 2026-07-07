@@ -18,7 +18,6 @@ import { WelcomeModal } from "./WelcomeModal";
 
 const WELCOME_STORAGE_KEY = "wishbox-welcome-seen";
 const UNDO_TIMEOUT_MS = 3000;
-const FADE_OUT_MS = 300;
 
 export function HomeClient() {
   const data = useWishBoxData();
@@ -34,7 +33,6 @@ export function HomeClient() {
   const [deletingItem, setDeletingItem] = useState<WishItem | null>(null);
   const [viewingItemId, setViewingItemId] = useState<string | null>(null);
 
-  const [fadingItemId, setFadingItemId] = useState<string | null>(null);
   const [undoTarget, setUndoTarget] = useState<WishItem | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -118,19 +116,20 @@ export function HomeClient() {
     openEditModal(viewingItem);
   };
 
-  const handleToggle = async (item: WishItem) => {
-    if (!item.is_purchased) {
-      setFadingItemId(item.id);
-      setTimeout(async () => {
-        await data.togglePurchased(item.id, true);
-        setFadingItemId(null);
+  const handleDeleteFromDetail = () => {
+    if (!viewingItem) return;
+    setViewingItemId(null);
+    setDeletingItem(viewingItem);
+  };
 
-        if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-        setUndoTarget(item);
-        undoTimerRef.current = setTimeout(() => setUndoTarget(null), UNDO_TIMEOUT_MS);
-      }, FADE_OUT_MS);
-    } else {
-      await data.togglePurchased(item.id, false);
+  const handleToggle = async (item: WishItem) => {
+    const nextPurchased = !item.is_purchased;
+    await data.togglePurchased(item.id, nextPurchased);
+
+    if (nextPurchased) {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      setUndoTarget(item);
+      undoTimerRef.current = setTimeout(() => setUndoTarget(null), UNDO_TIMEOUT_MS);
     }
   };
 
@@ -179,7 +178,6 @@ export function HomeClient() {
         <ItemList
           items={visibleItems}
           tagsByItemId={tagsByItemId}
-          fadingItemId={fadingItemId}
           onToggle={handleToggle}
           onRequestDelete={setDeletingItem}
           onView={(item) => setViewingItemId(item.id)}
@@ -233,6 +231,7 @@ export function HomeClient() {
         tags={viewingItem ? tagsByItemId(viewingItem.id) : []}
         onClose={() => setViewingItemId(null)}
         onEdit={handleEditFromDetail}
+        onDelete={handleDeleteFromDetail}
       />
 
       <WelcomeModal isOpen={showWelcome} onClose={dismissWelcome} />
