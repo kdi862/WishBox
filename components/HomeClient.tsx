@@ -167,7 +167,7 @@ export function HomeClient() {
         onSortChange={setSortOption}
       />
 
-      {activeTab === "buy" && <SummaryBanner items={items} />}
+      {activeTab === "buy" && <SummaryBanner items={visibleItems} />}
 
       {emptyVariant ? (
         <EmptyState

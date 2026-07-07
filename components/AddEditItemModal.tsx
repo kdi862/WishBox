@@ -124,8 +124,11 @@ export function AddEditItemModal({
   const handleCreateTag = async () => {
     const name = newTagName.trim();
     if (!name) return;
-    const tag = await onCreateTag(name, nextTagColor(tags.length));
-    setSelectedTagIds((prev) => [...prev, tag.id]);
+
+    const existing = tags.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
+    const tag = existing ?? (await onCreateTag(name, nextTagColor(tags.length)));
+
+    setSelectedTagIds((prev) => (prev.includes(tag.id) ? prev : [...prev, tag.id]));
     setNewTagName("");
   };
 
