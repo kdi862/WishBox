@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { Category, ItemInput, WishItem } from "@/lib/db";
 import { isValidUrl, nextCategoryColor } from "@/lib/format";
+import { fetchLinkPreview } from "@/lib/linkPreview";
 import { SCORE_LABELS, priorityColor } from "@/lib/priority";
 import { PriorityMatrixPreview } from "./PriorityMatrixPreview";
 import { XIcon } from "./icons";
@@ -63,6 +64,8 @@ export function AddEditItemModal({
   const [titleError, setTitleError] = useState<string | null>(null);
   const [purchaseLink, setPurchaseLink] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [isFetchingPreview, setIsFetchingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [priceInput, setPriceInput] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
@@ -99,6 +102,7 @@ export function AddEditItemModal({
     }
     setTitleError(null);
     setLinkError(null);
+    setPreviewError(null);
     setNewCategoryName("");
   }, [isOpen, editingItem]);
 
@@ -137,6 +141,31 @@ export function AddEditItemModal({
     const reader = new FileReader();
     reader.onload = () => setImageUrl(reader.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const handleFetchPreview = async () => {
+    const link = purchaseLink.trim();
+    if (!link || !isValidUrl(link)) {
+      setLinkError("올바른 URL 형식이 아니에요.");
+      return;
+    }
+
+    setIsFetchingPreview(true);
+    setPreviewError(null);
+    try {
+      const result = await fetchLinkPreview(link);
+      if (!title.trim() && result.title) setTitle(result.title);
+      if (!imageUrl && result.image) setImageUrl(result.image);
+      if (!priceInput && result.price !== null) setPriceInput(String(result.price));
+
+      if (!result.title && !result.image && result.price === null) {
+        setPreviewError("가져올 수 있는 정보가 없어요. 직접 입력해주세요.");
+      }
+    } catch (error) {
+      setPreviewError(error instanceof Error ? error.message : "정보를 가져오지 못했어요.");
+    } finally {
+      setIsFetchingPreview(false);
+    }
   };
 
   const handleCreateCategory = async () => {
@@ -224,6 +253,19 @@ export function AddEditItemModal({
               className="h-11 w-full rounded-lg border border-black/15 px-3 text-[15px] outline-none focus:border-brand"
             />
             {linkError && <p className="mt-1 text-[12px] text-coral">{linkError}</p>}
+            <div className="mt-1.5 flex flex-col gap-1">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit shrink-0 whitespace-nowrap"
+                disabled={!purchaseLink.trim() || isFetchingPreview}
+                onClick={handleFetchPreview}
+              >
+                {isFetchingPreview ? "가져오는 중…" : "정보 가져오기"}
+              </Button>
+              {previewError && <p className="text-[12px] text-coral">{previewError}</p>}
+            </div>
           </div>
 
           <div className="col-span-2 sm:col-span-1">
