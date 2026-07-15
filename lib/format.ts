@@ -13,7 +13,7 @@ export function isValidUrl(value: string): boolean {
   }
 }
 
-const TAG_PALETTE = [
+const CATEGORY_PALETTE = [
   "#3555D8",
   "#FF6452",
   "#4C9A6A",
@@ -24,6 +24,6 @@ const TAG_PALETTE = [
   "#E08E45",
 ];
 
-export function nextTagColor(existingCount: number): string {
-  return TAG_PALETTE[existingCount % TAG_PALETTE.length];
+export function nextCategoryColor(existingCount: number): string {
+  return CATEGORY_PALETTE[existingCount % CATEGORY_PALETTE.length];
 }

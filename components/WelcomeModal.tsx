@@ -5,8 +5,8 @@ import { Modal } from "./ui/Modal";
 
 const HIGHLIGHTS = [
   {
-    title: "태그로 분류하고 필터링",
-    description: "항목마다 태그를 붙이고, 원하는 태그만 골라서 모아볼 수 있어요.",
+    title: "카테고리로 분류하고 필터링",
+    description: "항목마다 카테고리를 붙이고, 원하는 카테고리만 골라서 모아볼 수 있어요.",
   },
   {
     title: "필요도 × 욕구로 우선순위 확인",

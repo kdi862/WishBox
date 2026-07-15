@@ -16,23 +16,23 @@ export interface WishItem {
   purchased_at: number | null;
 }
 
-export interface Tag {
+export interface Category {
   id: string;
   name: string;
   color: string;
   created_at: number;
 }
 
-export interface ItemTag {
+export interface ItemCategory {
   id?: number;
   item_id: string;
-  tag_id: string;
+  category_id: string;
 }
 
 class WishBoxDB extends Dexie {
   items!: EntityTable<WishItem, "id">;
-  tags!: EntityTable<Tag, "id">;
-  item_tags!: EntityTable<ItemTag, "id">;
+  categories!: EntityTable<Category, "id">;
+  item_categories!: EntityTable<ItemCategory, "id">;
 
   constructor() {
     super("wishbox");
@@ -41,6 +41,22 @@ class WishBoxDB extends Dexie {
       tags: "id, &name",
       item_tags: "++id, item_id, tag_id, [item_id+tag_id]",
     });
+    this.version(2)
+      .stores({
+        items: "id, is_purchased, priority_score, created_at, price",
+        tags: null,
+        item_tags: null,
+        categories: "id, &name",
+        item_categories: "++id, item_id, category_id, [item_id+category_id]",
+      })
+      .upgrade(async (tx) => {
+        const oldTags = await tx.table("tags").toArray();
+        const oldItemTags = await tx.table("item_tags").toArray();
+        await tx.table("categories").bulkAdd(oldTags);
+        await tx.table("item_categories").bulkAdd(
+          oldItemTags.map((link) => ({ item_id: link.item_id, category_id: link.tag_id }))
+        );
+      });
   }
 }
 
@@ -51,12 +67,12 @@ export function calcPriorityScore(needScore: number, wantScore: number) {
 }
 
 export async function fetchAll() {
-  const [items, tags, itemTags] = await Promise.all([
+  const [items, categories, itemCategories] = await Promise.all([
     db.items.toArray(),
-    db.tags.toArray(),
-    db.item_tags.toArray(),
+    db.categories.toArray(),
+    db.item_categories.toArray(),
   ]);
-  return { items, tags, itemTags };
+  return { items, categories, itemCategories };
 }
 
 export interface ItemInput {
@@ -67,7 +83,7 @@ export interface ItemInput {
   memo: string | null;
   need_score: number;
   want_score: number;
-  tagIds: string[];
+  categoryIds: string[];
 }
 
 export async function createItem(input: ItemInput) {
@@ -88,10 +104,10 @@ export async function createItem(input: ItemInput) {
     purchased_at: null,
   };
 
-  await db.transaction("rw", db.items, db.item_tags, async () => {
+  await db.transaction("rw", db.items, db.item_categories, async () => {
     await db.items.add(item);
-    await db.item_tags.bulkAdd(
-      input.tagIds.map((tagId) => ({ item_id: item.id, tag_id: tagId }))
+    await db.item_categories.bulkAdd(
+      input.categoryIds.map((categoryId) => ({ item_id: item.id, category_id: categoryId }))
     );
   });
 
@@ -99,7 +115,7 @@ export async function createItem(input: ItemInput) {
 }
 
 export async function updateItem(id: string, input: ItemInput) {
-  await db.transaction("rw", db.items, db.item_tags, async () => {
+  await db.transaction("rw", db.items, db.item_categories, async () => {
     const existing = await db.items.get(id);
     if (!existing) return;
 
@@ -115,19 +131,19 @@ export async function updateItem(id: string, input: ItemInput) {
       updated_at: Date.now(),
     });
 
-    const currentLinks = await db.item_tags.where("item_id").equals(id).toArray();
-    await db.item_tags.bulkDelete(currentLinks.map((link) => link.id!));
-    await db.item_tags.bulkAdd(
-      input.tagIds.map((tagId) => ({ item_id: id, tag_id: tagId }))
+    const currentLinks = await db.item_categories.where("item_id").equals(id).toArray();
+    await db.item_categories.bulkDelete(currentLinks.map((link) => link.id!));
+    await db.item_categories.bulkAdd(
+      input.categoryIds.map((categoryId) => ({ item_id: id, category_id: categoryId }))
     );
   });
 }
 
 export async function deleteItem(id: string) {
-  await db.transaction("rw", db.items, db.item_tags, async () => {
+  await db.transaction("rw", db.items, db.item_categories, async () => {
     await db.items.delete(id);
-    const links = await db.item_tags.where("item_id").equals(id).toArray();
-    await db.item_tags.bulkDelete(links.map((link) => link.id!));
+    const links = await db.item_categories.where("item_id").equals(id).toArray();
+    await db.item_categories.bulkDelete(links.map((link) => link.id!));
   });
 }
 
@@ -139,25 +155,25 @@ export async function setItemPurchased(id: string, isPurchased: boolean) {
   });
 }
 
-export async function createTag(name: string, color: string) {
-  const tag: Tag = {
+export async function createCategory(name: string, color: string) {
+  const category: Category = {
     id: crypto.randomUUID(),
     name,
     color,
     created_at: Date.now(),
   };
-  await db.tags.add(tag);
-  return tag;
+  await db.categories.add(category);
+  return category;
 }
 
-export async function updateTag(id: string, name: string, color: string) {
-  await db.tags.update(id, { name, color });
+export async function updateCategory(id: string, name: string, color: string) {
+  await db.categories.update(id, { name, color });
 }
 
-export async function deleteTag(id: string) {
-  await db.transaction("rw", db.tags, db.item_tags, async () => {
-    await db.tags.delete(id);
-    const links = await db.item_tags.where("tag_id").equals(id).toArray();
-    await db.item_tags.bulkDelete(links.map((link) => link.id!));
+export async function deleteCategory(id: string) {
+  await db.transaction("rw", db.categories, db.item_categories, async () => {
+    await db.categories.delete(id);
+    const links = await db.item_categories.where("category_id").equals(id).toArray();
+    await db.item_categories.bulkDelete(links.map((link) => link.id!));
   });
 }

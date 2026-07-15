@@ -1,15 +1,15 @@
-import type { Tag, WishItem } from "@/lib/db";
+import type { Category, WishItem } from "@/lib/db";
 import { ItemCard } from "./ItemCard";
 
 export function ItemList({
   items,
-  tagsByItemId,
+  categoriesByItemId,
   onToggle,
   onRequestDelete,
   onView,
 }: {
   items: WishItem[];
-  tagsByItemId: (itemId: string) => Tag[];
+  categoriesByItemId: (itemId: string) => Category[];
   onToggle: (item: WishItem) => void;
   onRequestDelete: (item: WishItem) => void;
   onView: (item: WishItem) => void;
@@ -20,7 +20,7 @@ export function ItemList({
         <li key={item.id}>
           <ItemCard
             item={item}
-            tags={tagsByItemId(item.id)}
+            categories={categoriesByItemId(item.id)}
             onToggle={() => onToggle(item)}
             onRequestDelete={() => onRequestDelete(item)}
             onClick={() => onView(item)}

@@ -38,23 +38,7 @@ export function TrashIcon({ className = "size-4" }: { className?: string }) {
   );
 }
 
-export function StarIcon({ filled, className = "size-4" }: { filled: boolean; className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      aria-hidden
-      fill={filled ? "var(--color-coral)" : "none"}
-      stroke={filled ? "var(--color-coral)" : "var(--color-gray)"}
-      strokeWidth={1.5}
-      strokeLinejoin="round"
-    >
-      <path d="M12 2.5l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8L12 17.8 5.9 21l1.5-6.8L2.2 9.5l6.9-.7z" />
-    </svg>
-  );
-}
-
-export function TagDefaultIcon({
+export function CategoryDefaultIcon({
   className = "size-6",
   style,
 }: {

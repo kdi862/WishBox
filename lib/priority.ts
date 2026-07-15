@@ -24,3 +24,10 @@ export function getQuadrant(needScore: number, wantScore: number): PriorityQuadr
 }
 
 export const SCORE_LABELS = ["전혀", "조금", "보통", "꽤", "매우"];
+
+const PRIORITY_COLORS = ["#4C9A6A", "#8BAE4E", "#E0B23D", "#E08E45", "#FF6452"];
+
+export function priorityColor(score: number): string {
+  const index = Math.min(5, Math.max(1, Math.round(score))) - 1;
+  return PRIORITY_COLORS[index];
+}

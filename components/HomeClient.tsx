@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { WishItem } from "@/lib/db";
-import { tagCountMap, tagIdsForItem, useWishBoxData } from "@/lib/useWishBoxData";
+import { categoryCountMap, categoryIdsForItem, useWishBoxData } from "@/lib/useWishBoxData";
 import { AddEditItemModal } from "./AddEditItemModal";
+import { CategoryFilterBar } from "./CategoryFilterBar";
+import { CategoryManageModal } from "./CategoryManageModal";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { EmptyState } from "./EmptyState";
 import { Header } from "./Header";
@@ -12,8 +14,6 @@ import { ItemList } from "./ItemList";
 import { Snackbar } from "./Snackbar";
 import { SummaryBanner } from "./SummaryBanner";
 import { TabsAndSort, type SortOption, type TabKey } from "./TabsAndSort";
-import { TagFilterBar } from "./TagFilterBar";
-import { TagManageModal } from "./TagManageModal";
 import { WelcomeModal } from "./WelcomeModal";
 
 const WELCOME_STORAGE_KEY = "wishbox-welcome-seen";
@@ -21,15 +21,15 @@ const UNDO_TIMEOUT_MS = 3000;
 
 export function HomeClient() {
   const data = useWishBoxData();
-  const { items, tags, itemTags } = data;
+  const { items, categories, itemCategories } = data;
 
   const [activeTab, setActiveTab] = useState<TabKey>("buy");
   const [sortOption, setSortOption] = useState<SortOption>("priority");
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<WishItem | null>(null);
-  const [isTagManageOpen, setIsTagManageOpen] = useState(false);
+  const [isCategoryManageOpen, setIsCategoryManageOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState<WishItem | null>(null);
   const [viewingItemId, setViewingItemId] = useState<string | null>(null);
 
@@ -56,20 +56,20 @@ export function HomeClient() {
     };
   }, []);
 
-  const tagsByItemId = (itemId: string) => {
-    const ids = tagIdsForItem(itemTags, itemId);
-    return tags.filter((tag) => ids.includes(tag.id));
+  const categoriesByItemId = (itemId: string) => {
+    const ids = categoryIdsForItem(itemCategories, itemId);
+    return categories.filter((category) => ids.includes(category.id));
   };
 
-  const tagCounts = useMemo(() => tagCountMap(itemTags), [itemTags]);
+  const categoryCounts = useMemo(() => categoryCountMap(itemCategories), [itemCategories]);
 
   const visibleItems = useMemo(() => {
     let list = items.filter((item) => (activeTab === "buy" ? !item.is_purchased : item.is_purchased));
 
-    if (selectedTagIds.length > 0) {
+    if (selectedCategoryIds.length > 0) {
       list = list.filter((item) => {
-        const ids = tagIdsForItem(itemTags, item.id);
-        return selectedTagIds.some((tagId) => ids.includes(tagId));
+        const ids = categoryIdsForItem(itemCategories, item.id);
+        return selectedCategoryIds.some((categoryId) => ids.includes(categoryId));
       });
     }
 
@@ -89,14 +89,14 @@ export function HomeClient() {
         break;
     }
     return sorted;
-  }, [items, itemTags, activeTab, selectedTagIds, sortOption]);
+  }, [items, itemCategories, activeTab, selectedCategoryIds, sortOption]);
 
   const emptyVariant = useMemo(() => {
     if (visibleItems.length > 0) return null;
-    if (selectedTagIds.length > 0) return "filtered-empty" as const;
+    if (selectedCategoryIds.length > 0) return "filtered-empty" as const;
     if (activeTab === "bought") return "no-purchased" as const;
     return "no-items" as const;
-  }, [visibleItems, selectedTagIds, activeTab]);
+  }, [visibleItems, selectedCategoryIds, activeTab]);
 
   const viewingItem = items.find((item) => item.id === viewingItemId) ?? null;
 
@@ -148,16 +148,16 @@ export function HomeClient() {
     <div className="flex flex-1 flex-col pb-24">
       <Header onAddClick={openAddModal} />
 
-      <TagFilterBar
-        tags={tags}
-        selectedTagIds={selectedTagIds}
-        onToggleTag={(tagId) =>
-          setSelectedTagIds((prev) =>
-            prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+      <CategoryFilterBar
+        categories={categories}
+        selectedCategoryIds={selectedCategoryIds}
+        onToggleCategory={(categoryId) =>
+          setSelectedCategoryIds((prev) =>
+            prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId]
           )
         }
-        onClearFilters={() => setSelectedTagIds([])}
-        onManageTags={() => setIsTagManageOpen(true)}
+        onClearFilters={() => setSelectedCategoryIds([])}
+        onManageCategories={() => setIsCategoryManageOpen(true)}
       />
 
       <TabsAndSort
@@ -172,12 +172,12 @@ export function HomeClient() {
       {emptyVariant ? (
         <EmptyState
           variant={emptyVariant}
-          onPrimaryAction={emptyVariant === "filtered-empty" ? () => setSelectedTagIds([]) : openAddModal}
+          onPrimaryAction={emptyVariant === "filtered-empty" ? () => setSelectedCategoryIds([]) : openAddModal}
         />
       ) : (
         <ItemList
           items={visibleItems}
-          tagsByItemId={tagsByItemId}
+          categoriesByItemId={categoriesByItemId}
           onToggle={handleToggle}
           onRequestDelete={setDeletingItem}
           onView={(item) => setViewingItemId(item.id)}
@@ -187,10 +187,10 @@ export function HomeClient() {
       <AddEditItemModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        tags={tags}
-        onCreateTag={data.addTag}
+        categories={categories}
+        onCreateCategory={data.addCategory}
         editingItem={editingItem}
-        editingItemTagIds={editingItem ? tagIdsForItem(itemTags, editingItem.id) : []}
+        editingItemCategoryIds={editingItem ? categoryIdsForItem(itemCategories, editingItem.id) : []}
         onSubmit={async (input) => {
           if (editingItem) {
             await data.editItem(editingItem.id, input);
@@ -200,14 +200,14 @@ export function HomeClient() {
         }}
       />
 
-      <TagManageModal
-        isOpen={isTagManageOpen}
-        onClose={() => setIsTagManageOpen(false)}
-        tags={tags}
-        tagCounts={tagCounts}
-        onCreateTag={data.addTag}
-        onUpdateTag={data.editTag}
-        onDeleteTag={data.removeTag}
+      <CategoryManageModal
+        isOpen={isCategoryManageOpen}
+        onClose={() => setIsCategoryManageOpen(false)}
+        categories={categories}
+        categoryCounts={categoryCounts}
+        onCreateCategory={data.addCategory}
+        onUpdateCategory={data.editCategory}
+        onDeleteCategory={data.removeCategory}
       />
 
       <ConfirmDialog
@@ -228,7 +228,7 @@ export function HomeClient() {
 
       <ItemDetailModal
         item={viewingItem}
-        tags={viewingItem ? tagsByItemId(viewingItem.id) : []}
+        categories={viewingItem ? categoriesByItemId(viewingItem.id) : []}
         onClose={() => setViewingItemId(null)}
         onEdit={handleEditFromDetail}
         onDelete={handleDeleteFromDetail}

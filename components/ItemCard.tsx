@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import type { Tag, WishItem } from "@/lib/db";
+import type { Category, WishItem } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
-import { TagDefaultIcon, TrashIcon } from "./icons";
+import { CategoryDefaultIcon, TrashIcon } from "./icons";
 import { Checkbox } from "./ui/Checkbox";
-import { PriorityStars } from "./ui/PriorityStars";
+import { PriorityLevel } from "./ui/PriorityLevel";
 
 const REVEAL_WIDTH = 76;
 const LONG_PRESS_MS = 500;
@@ -14,13 +14,13 @@ const DRAG_THRESHOLD = 8;
 
 export function ItemCard({
   item,
-  tags,
+  categories,
   onToggle,
   onRequestDelete,
   onClick,
 }: {
   item: WishItem;
-  tags: Tag[];
+  categories: Category[];
   onToggle: () => void;
   onRequestDelete: () => void;
   onClick: () => void;
@@ -74,7 +74,7 @@ export function ItemCard({
     if (!dragState.current?.moved) onClick();
   };
 
-  const itemTagColor = tags[0]?.color;
+  const itemCategoryColor = categories[0]?.color;
 
   return (
     <div className="relative overflow-hidden rounded-xl">
@@ -108,29 +108,45 @@ export function ItemCard({
               className="size-14 object-cover"
             />
           ) : (
-            <TagDefaultIcon className="size-6" style={itemTagColor ? { color: itemTagColor } : undefined} />
+            <CategoryDefaultIcon
+              className="size-6"
+              style={itemCategoryColor ? { color: itemCategoryColor } : undefined}
+            />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-medium text-ink">{item.title}</p>
           <div className="mt-1 flex items-center gap-1.5">
-            {tags.slice(0, 2).map((tag) => (
+            {categories.slice(0, 2).map((category) => (
               <span
-                key={tag.id}
+                key={category.id}
                 className="rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
-                style={{ backgroundColor: tag.color }}
+                style={{ backgroundColor: category.color }}
               >
-                {tag.name}
+                {category.name}
               </span>
             ))}
             <span className="text-[13px] text-gray">{formatPrice(item.price)}</span>
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <PriorityStars score={item.priority_score} />
-          <Checkbox checked={item.is_purchased} onChange={onToggle} aria-label="구매 완료 체크" />
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
+              <span className="text-[12px] text-gray">필요</span>
+              <PriorityLevel score={item.need_score} className="text-[12px]" />
+            </div>
+            <span className="text-[12px] text-gray">·</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[12px] text-gray">만족</span>
+              <PriorityLevel score={item.want_score} className="text-[12px]" />
+            </div>
+          </div>
+          <div className="mt-0.5 flex items-center gap-2">
+            <span className="text-[13px] text-gray">구매완료</span>
+            <Checkbox checked={item.is_purchased} onChange={onToggle} aria-label="구매 완료 체크" />
+          </div>
         </div>
       </div>
     </div>

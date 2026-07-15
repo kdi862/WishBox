@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import type { ItemInput, Tag, WishItem } from "@/lib/db";
-import { isValidUrl, nextTagColor } from "@/lib/format";
-import { SCORE_LABELS } from "@/lib/priority";
+import type { Category, ItemInput, WishItem } from "@/lib/db";
+import { isValidUrl, nextCategoryColor } from "@/lib/format";
+import { SCORE_LABELS, priorityColor } from "@/lib/priority";
 import { PriorityMatrixPreview } from "./PriorityMatrixPreview";
 import { XIcon } from "./icons";
 import { Button } from "./ui/Button";
@@ -19,7 +19,7 @@ interface ItemDraft {
   priceInput: string;
   imageUrl: string | null;
   memo: string;
-  selectedTagIds: string[];
+  selectedCategoryIds: string[];
   needScore: number;
   wantScore: number;
 }
@@ -45,18 +45,18 @@ function clearDraft() {
 export function AddEditItemModal({
   isOpen,
   onClose,
-  tags,
-  onCreateTag,
+  categories,
+  onCreateCategory,
   editingItem,
-  editingItemTagIds,
+  editingItemCategoryIds,
   onSubmit,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  tags: Tag[];
-  onCreateTag: (name: string, color: string) => Promise<Tag>;
+  categories: Category[];
+  onCreateCategory: (name: string, color: string) => Promise<Category>;
   editingItem: WishItem | null;
-  editingItemTagIds: string[];
+  editingItemCategoryIds: string[];
   onSubmit: (input: ItemInput) => Promise<void>;
 }) {
   const [title, setTitle] = useState("");
@@ -66,14 +66,14 @@ export function AddEditItemModal({
   const [priceInput, setPriceInput] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const [newTagName, setNewTagName] = useState("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [needScore, setNeedScore] = useState(3);
   const [wantScore, setWantScore] = useState(3);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const editingItemTagIdsRef = useRef(editingItemTagIds);
-  editingItemTagIdsRef.current = editingItemTagIds;
+  const editingItemCategoryIdsRef = useRef(editingItemCategoryIds);
+  editingItemCategoryIdsRef.current = editingItemCategoryIds;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -83,7 +83,7 @@ export function AddEditItemModal({
       setPriceInput(editingItem.price !== null ? String(editingItem.price) : "");
       setImageUrl(editingItem.image_url);
       setMemo(editingItem.memo ?? "");
-      setSelectedTagIds(editingItemTagIdsRef.current);
+      setSelectedCategoryIds(editingItemCategoryIdsRef.current);
       setNeedScore(editingItem.need_score);
       setWantScore(editingItem.want_score);
     } else {
@@ -93,25 +93,43 @@ export function AddEditItemModal({
       setPriceInput(draft?.priceInput ?? "");
       setImageUrl(draft?.imageUrl ?? null);
       setMemo(draft?.memo ?? "");
-      setSelectedTagIds(draft?.selectedTagIds ?? []);
+      setSelectedCategoryIds(draft?.selectedCategoryIds ?? []);
       setNeedScore(draft?.needScore ?? 3);
       setWantScore(draft?.wantScore ?? 3);
     }
     setTitleError(null);
     setLinkError(null);
-    setNewTagName("");
+    setNewCategoryName("");
   }, [isOpen, editingItem]);
 
   useEffect(() => {
     if (!isOpen || editingItem) return;
     const isBlank =
-      !title && !purchaseLink && !priceInput && !imageUrl && !memo && selectedTagIds.length === 0 && needScore === 3 && wantScore === 3;
+      !title &&
+      !purchaseLink &&
+      !priceInput &&
+      !imageUrl &&
+      !memo &&
+      selectedCategoryIds.length === 0 &&
+      needScore === 3 &&
+      wantScore === 3;
     if (isBlank) {
       clearDraft();
       return;
     }
-    saveDraft({ title, purchaseLink, priceInput, imageUrl, memo, selectedTagIds, needScore, wantScore });
-  }, [isOpen, editingItem, title, purchaseLink, priceInput, imageUrl, memo, selectedTagIds, needScore, wantScore]);
+    saveDraft({ title, purchaseLink, priceInput, imageUrl, memo, selectedCategoryIds, needScore, wantScore });
+  }, [
+    isOpen,
+    editingItem,
+    title,
+    purchaseLink,
+    priceInput,
+    imageUrl,
+    memo,
+    selectedCategoryIds,
+    needScore,
+    wantScore,
+  ]);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -121,20 +139,20 @@ export function AddEditItemModal({
     reader.readAsDataURL(file);
   };
 
-  const handleCreateTag = async () => {
-    const name = newTagName.trim();
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim();
     if (!name) return;
 
-    const existing = tags.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
-    const tag = existing ?? (await onCreateTag(name, nextTagColor(tags.length)));
+    const existing = categories.find((category) => category.name.toLowerCase() === name.toLowerCase());
+    const category = existing ?? (await onCreateCategory(name, nextCategoryColor(categories.length)));
 
-    setSelectedTagIds((prev) => (prev.includes(tag.id) ? prev : [...prev, tag.id]));
-    setNewTagName("");
+    setSelectedCategoryIds((prev) => (prev.includes(category.id) ? prev : [...prev, category.id]));
+    setNewCategoryName("");
   };
 
-  const toggleTag = (tagId: string) => {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId]
     );
   };
 
@@ -157,7 +175,7 @@ export function AddEditItemModal({
       memo: memo.trim() || null,
       need_score: needScore,
       want_score: wantScore,
-      tagIds: selectedTagIds,
+      categoryIds: selectedCategoryIds,
     };
 
     await onSubmit(input);
@@ -278,30 +296,33 @@ export function AddEditItemModal({
         </div>
 
         <div>
-          <label className="mb-2 block text-[14px] font-medium text-ink">태그</label>
+          <div className="mb-2 flex items-baseline gap-1.5">
+            <label className="text-[14px] font-medium text-ink">카테고리</label>
+            <span className="text-[12px] text-gray">(여러 개 선택 가능)</span>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
+            {categories.map((category) => (
               <Chip
-                key={tag.id}
-                selected={selectedTagIds.includes(tag.id)}
-                color={tag.color}
-                onClick={() => toggleTag(tag.id)}
+                key={category.id}
+                selected={selectedCategoryIds.includes(category.id)}
+                color={category.color}
+                onClick={() => toggleCategory(category.id)}
               >
-                {tag.name}
+                {category.name}
               </Chip>
             ))}
           </div>
           <div className="mt-2 flex gap-2">
             <input
-              value={newTagName}
-              onChange={(e) => setNewTagName(e.target.value)}
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  handleCreateTag();
+                  handleCreateCategory();
                 }
               }}
-              placeholder="+ 새 태그 만들기 (Enter)"
+              placeholder="+ 새 카테고리 만들기 (Enter)"
               className="h-9 w-full max-w-[220px] rounded-full border border-dashed border-black/20 px-3 text-[13px] outline-none focus:border-brand"
             />
           </div>
@@ -365,8 +386,9 @@ function ScoreSelector({
               key={scoreValue}
               type="button"
               onClick={() => onChange(scoreValue)}
+              style={active ? { backgroundColor: priorityColor(scoreValue) } : undefined}
               className={`h-9 rounded-lg text-[13px] font-medium transition-colors ${
-                active ? "bg-brand text-white" : "bg-black/5 text-gray"
+                active ? "text-white" : "bg-black/5 text-gray"
               }`}
             >
               {scoreLabel}

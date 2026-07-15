@@ -2,35 +2,54 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  type Category,
+  type ItemCategory,
   type ItemInput,
-  type ItemTag,
-  type Tag,
   type WishItem,
+  createCategory,
   createItem,
-  createTag,
+  deleteCategory,
   deleteItem,
-  deleteTag,
   fetchAll,
   setItemPurchased,
+  updateCategory as updateCategoryInDb,
   updateItem as updateItemInDb,
-  updateTag as updateTagInDb,
 } from "./db";
+import { nextCategoryColor } from "./format";
+
+const DEFAULT_CATEGORIES_SEEDED_KEY = "wishbox-default-categories-seeded";
+const DEFAULT_CATEGORY_NAMES = ["생필품", "의류", "취미"];
+
+async function seedDefaultCategoriesIfNeeded(existingCount: number) {
+  if (typeof window === "undefined") return;
+  if (window.localStorage.getItem(DEFAULT_CATEGORIES_SEEDED_KEY)) return;
+
+  if (existingCount === 0) {
+    for (const [index, name] of DEFAULT_CATEGORY_NAMES.entries()) {
+      await createCategory(name, nextCategoryColor(index));
+    }
+  }
+  window.localStorage.setItem(DEFAULT_CATEGORIES_SEEDED_KEY, "1");
+}
 
 export function useWishBoxData() {
   const [items, setItems] = useState<WishItem[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [itemTags, setItemTags] = useState<ItemTag[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [itemCategories, setItemCategories] = useState<ItemCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     const data = await fetchAll();
     setItems(data.items);
-    setTags(data.tags);
-    setItemTags(data.itemTags);
+    setCategories(data.categories);
+    setItemCategories(data.itemCategories);
+    return data;
   }, []);
 
   useEffect(() => {
     (async () => {
+      const data = await refresh();
+      await seedDefaultCategoriesIfNeeded(data.categories.length);
       await refresh();
       setIsLoading(false);
     })();
@@ -69,26 +88,26 @@ export function useWishBoxData() {
     [refresh]
   );
 
-  const addTag = useCallback(
+  const addCategory = useCallback(
     async (name: string, color: string) => {
-      const tag = await createTag(name, color);
+      const category = await createCategory(name, color);
       await refresh();
-      return tag;
+      return category;
     },
     [refresh]
   );
 
-  const editTag = useCallback(
+  const editCategory = useCallback(
     async (id: string, name: string, color: string) => {
-      await updateTagInDb(id, name, color);
+      await updateCategoryInDb(id, name, color);
       await refresh();
     },
     [refresh]
   );
 
-  const removeTag = useCallback(
+  const removeCategory = useCallback(
     async (id: string) => {
-      await deleteTag(id);
+      await deleteCategory(id);
       await refresh();
     },
     [refresh]
@@ -96,28 +115,28 @@ export function useWishBoxData() {
 
   return {
     items,
-    tags,
-    itemTags,
+    categories,
+    itemCategories,
     isLoading,
     refresh,
     addItem,
     editItem,
     removeItem,
     togglePurchased,
-    addTag,
-    editTag,
-    removeTag,
+    addCategory,
+    editCategory,
+    removeCategory,
   };
 }
 
-export function tagIdsForItem(itemTags: ItemTag[], itemId: string): string[] {
-  return itemTags.filter((link) => link.item_id === itemId).map((link) => link.tag_id);
+export function categoryIdsForItem(itemCategories: ItemCategory[], itemId: string): string[] {
+  return itemCategories.filter((link) => link.item_id === itemId).map((link) => link.category_id);
 }
 
-export function tagCountMap(itemTags: ItemTag[]): Record<string, number> {
+export function categoryCountMap(itemCategories: ItemCategory[]): Record<string, number> {
   const map: Record<string, number> = {};
-  for (const link of itemTags) {
-    map[link.tag_id] = (map[link.tag_id] ?? 0) + 1;
+  for (const link of itemCategories) {
+    map[link.category_id] = (map[link.category_id] ?? 0) + 1;
   }
   return map;
 }
